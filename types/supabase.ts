@@ -9,6 +9,58 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      organizations: {
+        Row: {
+          id: number
+          code: string
+          name: string
+          phone: string | null
+          email: string | null
+          is_active: boolean
+          created_at: string
+          created_by: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          code: string
+          name: string
+          phone?: string | null
+          email?: string | null
+          is_active?: boolean
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          code?: string
+          name?: string
+          phone?: string | null
+          email?: string | null
+          is_active?: boolean
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_updated_by_fkey"
+            columns: ["updated_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       users: {
         Row: {
           id: string
@@ -93,22 +145,7 @@ export interface Database {
       }
     }
     Views: {
-      v_organizations: {
-        Row: {
-          id: number
-          code: string
-          name: string
-          phone: string | null
-          email: string | null
-          is_active: boolean
-          created_at: string
-          created_by_name: string | null
-        }
-        // Note: Views are read-only, so they don't have Insert/Update types.
-        // FIX: Added Relationships property to the view. The Supabase client's type inference
-        // requires this property on all tables and views, even if empty, to function correctly.
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_user_permissions: {
