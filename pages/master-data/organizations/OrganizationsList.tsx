@@ -72,6 +72,24 @@ const OrganizationsList: React.FC = () => {
         ))
     );
 
+    const renderEmptyState = () => (
+        <TableRow>
+            <TableCell colSpan={8}>
+                <div className="flex flex-col items-center justify-center text-center p-8 space-y-4">
+                    <Icons.Landmark className="h-16 w-16 text-gray-400" />
+                    <h3 className="text-xl font-semibold">No Organizations Found</h3>
+                    <p className="text-gray-500 max-w-md">
+                        This could be because no organizations have been created yet, or you haven't been assigned to one. Please contact an administrator or create a new organization.
+                    </p>
+                    <Button>
+                        Add New Organization
+                    </Button>
+                </div>
+            </TableCell>
+        </TableRow>
+    );
+
+
     return (
         <div className="h-full flex flex-col space-y-4">
              {/* FiltersBar */}
@@ -121,11 +139,7 @@ const OrganizationsList: React.FC = () => {
                             {loading ? (
                                 renderSkeleton()
                             ) : organizations.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={8} className="text-center h-24">
-                                        No organizations found.
-                                    </TableCell>
-                                </TableRow>
+                                renderEmptyState()
                             ) : (
                                 organizations.map((org) => (
                                     <TableRow key={org.id}>

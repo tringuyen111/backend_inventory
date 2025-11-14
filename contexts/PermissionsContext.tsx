@@ -26,6 +26,8 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
             console.error('Error fetching permissions:', error);
             setPermissions([]);
           } else {
+            // Add detailed logging for debugging.
+            console.log(`[Permissions Debug] RPC 'get_user_permissions' returned:`, data);
             setPermissions(data || []);
           }
         } catch (e) {

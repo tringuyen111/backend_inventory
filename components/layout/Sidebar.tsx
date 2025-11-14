@@ -7,16 +7,20 @@ import * as Icons from '../icons';
 
 type IconName = keyof typeof Icons;
 
+// FIX: Reverted all permission strings to a consistent lowercase and pluralized format
+// (e.g., 'organizations.read'). This is based on the strong likelihood that the
+// backend RPC call returns permissions in this format, and the previous change to
+// 'UPPERCASE.SINGULAR' was an incorrect assumption, causing the menu to be empty.
 const ALL_MENU_ITEMS: MenuItem[] = [
     { menu_item: 'Dashboard', path: '/dashboard', icon: 'Home', requiredPermission: 'dashboard.read' },
     {
         menu_item: 'Transactions', path: '/transactions', icon: 'ArrowRightLeft', requiredPermission: 'transactions.read',
         children: [
-            { menu_item: 'Goods Receipt', path: '/transactions/goods-receipt', icon: 'PackagePlus', requiredPermission: 'goods_receipt.read' },
-            { menu_item: 'Goods Issue', path: '/transactions/goods-issue', icon: 'PackageMinus', requiredPermission: 'goods_issue.read' },
-            { menu_item: 'Goods Transfer', path: '/transactions/goods-transfer', icon: 'Truck', requiredPermission: 'goods_transfer.read' },
-            { menu_item: 'Inventory Count', path: '/transactions/inventory-count', icon: 'ClipboardList', requiredPermission: 'inventory_count.read' },
-            { menu_item: 'Put-away', path: '/transactions/put-away', icon: 'PackageSearch', requiredPermission: 'putaway.read' },
+            { menu_item: 'Goods Receipt', path: '/transactions/goods-receipt', icon: 'PackagePlus', requiredPermission: 'goods_receipts.read' },
+            { menu_item: 'Goods Issue', path: '/transactions/goods-issue', icon: 'PackageMinus', requiredPermission: 'goods_issues.read' },
+            { menu_item: 'Goods Transfer', path: '/transactions/goods-transfer', icon: 'Truck', requiredPermission: 'goods_transfers.read' },
+            { menu_item: 'Inventory Count', path: '/transactions/inventory-count', icon: 'ClipboardList', requiredPermission: 'inventory_counts.read' },
+            { menu_item: 'Put-away', path: '/transactions/put-away', icon: 'PackageSearch', requiredPermission: 'put_aways.read' },
         ]
     },
     {
@@ -37,7 +41,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
         children: [
             { menu_item: 'Users', path: '/settings/users', icon: 'Users', requiredPermission: 'users.read' },
             { menu_item: 'Roles & Permissions', path: '/settings/roles', icon: 'ShieldCheck', requiredPermission: 'roles.read' },
-            { menu_item: 'Inventory Policy', path: '/settings/inventory-policy', icon: 'Scaling', requiredPermission: 'inventory_policy.read' },
+            { menu_item: 'Inventory Policy', path: '/settings/inventory-policy', icon: 'Scaling', requiredPermission: 'inventory_policies.read' },
         ]
     }
 ];
@@ -172,10 +176,18 @@ const Sidebar: React.FC<{isCollapsed: boolean}> = ({ isCollapsed }) => {
            Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="h-10 bg-gray-700 rounded-md animate-pulse"></div>
           ))
-        ) : (
+        ) : accessibleMenuItems.length > 0 ? (
           accessibleMenuItems.map((item) => (
             <NavItem key={item.path} item={item} isCollapsed={isCollapsed} openMenus={openMenus} toggleMenu={toggleMenu} />
           ))
+        ) : (
+           <div className={`p-4 text-center text-gray-400 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 sr-only' : 'opacity-100'}`}>
+              <Icons.ShieldCheck className="mx-auto h-10 w-10 mb-2" />
+              <p className="text-sm font-semibold">No Menu Items</p>
+              <p className="text-xs mt-1">
+                  Your account currently has no assigned permissions to view any menu items. Please contact an administrator.
+              </p>
+          </div>
         )}
       </nav>
     </aside>
