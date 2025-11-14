@@ -22,6 +22,7 @@ const OrganizationsList: React.FC = () => {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isUpdating, setIsUpdating] = useState<number | null>(null);
     
     // Filtering and Searching State
     const [searchTerm, setSearchTerm] = useState('');
@@ -94,17 +95,70 @@ const OrganizationsList: React.FC = () => {
         fetchOrganizations();
     }, [fetchOrganizations]);
 
+    const handleToggleStatus = async (orgId: number, currentStatus: boolean) => {
+        setIsUpdating(orgId);
+        const { error: updateError } = await supabase
+            .from('organizations')
+            .update({ is_active: !currentStatus })
+            .eq('id', orgId);
+
+        if (updateError) {
+            setError(`Failed to update status: ${updateError.message}`);
+        } else {
+            await fetchOrganizations(); // Refetch
+        }
+        setIsUpdating(null);
+    };
+
+    const handleExport = () => {
+        const headers = columnConfig
+            .filter(col => col.id !== 'actions' && columnVisibility[col.id])
+            .map(col => `"${col.label}"`);
+
+        const rows = organizations.map(org => {
+            return columnConfig
+                .filter(col => col.id !== 'actions' && columnVisibility[col.id])
+                .map(col => {
+                    let value: any;
+                    switch (col.id) {
+                        case 'code': value = org.code; break;
+                        case 'name': value = org.name; break;
+                        case 'phone': value = org.phone; break;
+                        case 'email': value = org.email; break;
+                        case 'status': value = org.is_active ? 'Active' : 'Inactive'; break;
+                        case 'updated_at': value = org.updated_at ? new Date(org.updated_at).toLocaleString('en-GB', { hour12: false }).replace(',', '') : ''; break;
+                        case 'updated_by_name': value = org.updated_by?.full_name; break;
+                        case 'created_at': value = new Date(org.created_at).toLocaleString('en-GB', { hour12: false }).replace(',', ''); break;
+                        case 'created_by_name': value = org.created_by?.full_name; break;
+                        default: value = '';
+                    }
+                    return `"${String(value || '').replace(/"/g, '""')}"`;
+                });
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "organizations_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const columnConfig = useMemo(() => [
-        { id: 'code', label: 'Code' },
-        { id: 'name', label: 'Name' },
-        { id: 'phone', label: 'Phone' },
-        { id: 'email', label: 'Email' },
-        { id: 'status', label: 'Status' },
-        { id: 'updated_at', label: 'Updated At' },
-        { id: 'updated_by_name', label: 'Updated By' },
-        { id: 'created_at', label: 'Created At' },
-        { id: 'created_by_name', label: 'Created By' },
-        { id: 'actions', label: 'Actions' },
+        { id: 'code', label: 'Code', widthClass: 'w-48' },
+        { id: 'name', label: 'Name', widthClass: 'w-64' },
+        { id: 'phone', label: 'Phone', widthClass: 'w-40' },
+        { id: 'email', label: 'Email', widthClass: 'w-64' },
+        { id: 'status', label: 'Status', widthClass: 'w-32' },
+        { id: 'updated_at', label: 'Updated At', widthClass: 'w-48' },
+        { id: 'updated_by_name', label: 'Updated By', widthClass: 'w-48' },
+        { id: 'created_at', label: 'Created At', widthClass: 'w-48' },
+        { id: 'created_by_name', label: 'Created By', widthClass: 'w-48' },
+        { id: 'actions', label: 'Actions', widthClass: 'w-28' },
     ], []);
     
     const renderCellContent = (org: Organization, columnId: string) => {
@@ -113,7 +167,7 @@ const OrganizationsList: React.FC = () => {
             case 'name': return org.name;
             case 'phone': return org.phone || 'N/A';
             case 'email': return org.email || 'N/A';
-            case 'status': return <Badge variant={org.is_active ? 'success' : 'secondary'}>{org.is_active ? 'ACTIVE' : 'INACTIVE'}</Badge>;
+            case 'status': return <Badge variant={org.is_active ? 'success' : 'destructive'}>{org.is_active ? 'Active' : 'Inactive'}</Badge>;
             case 'updated_at': return org.updated_at ? new Date(org.updated_at).toLocaleString('en-GB', { hour12: false }).replace(',', '') : 'N/A';
             case 'updated_by_name': return org.updated_by?.full_name || 'N/A';
             case 'created_at': return new Date(org.created_at).toLocaleString('en-GB', { hour12: false }).replace(',', '');
@@ -144,7 +198,7 @@ const OrganizationsList: React.FC = () => {
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
-                         <Button disabled variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 cursor-not-allowed">
+                         <Button onClick={handleExport} disabled={loading || organizations.length === 0} variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700">
                             <Icons.FileDown className="mr-2 h-4 w-4" /> Export
                         </Button>
                         <DropdownMenu>
@@ -174,7 +228,7 @@ const OrganizationsList: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-grow overflow-hidden">
+            <div className="flex-grow overflow-hidden min-w-0">
                  {error && <div className="text-red-500 p-4 bg-red-100 rounded-md m-4">Error: {error}</div>}
                 <div className="h-full overflow-auto">
                     <Table>
@@ -184,8 +238,10 @@ const OrganizationsList: React.FC = () => {
                                     <TableHead 
                                         key={col.id}
                                         className={
-                                            (col.id === 'code' ? 'sticky left-0 z-20 bg-slate-50 dark:bg-gray-950' : '') +
-                                            (col.id === 'actions' ? 'sticky right-0 z-20 bg-slate-50 dark:bg-gray-950 text-right pr-6' : '')
+                                          (col.id === 'code' ? 'sticky left-0 z-20 ' : '') +
+                                          (col.id === 'name' ? 'sticky left-[12rem] z-20 ' : '') +
+                                          (col.id === 'actions' ? 'sticky right-0 z-20 text-right pr-6 ' : '') +
+                                          (col.widthClass || '')
                                         }
                                     >
                                         {col.label}
@@ -196,13 +252,14 @@ const OrganizationsList: React.FC = () => {
                         <TableBody>
                             {loading ? (
                                 Array.from({ length: pagination.pageSize }).map((_, i) => (
-                                    <TableRow key={`skeleton-${i}`} className="bg-white dark:bg-gray-950">
+                                    <TableRow key={`skeleton-${i}`}>
                                         {columnConfig.map(col => columnVisibility[col.id] && (
                                             <TableCell 
                                                 key={`cell-skeleton-${col.id}`}
                                                 className={
-                                                    (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') +
-                                                    (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '')
+                                                    (col.id === 'code' ? 'sticky left-0 z-10' : '') +
+                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10' : '') +
+                                                    (col.id === 'actions' ? 'sticky right-0 z-10' : '')
                                                 }
                                             >
                                                 <Skeleton className="h-5 w-full" />
@@ -227,13 +284,27 @@ const OrganizationsList: React.FC = () => {
                                             <TableCell
                                                 key={col.id}
                                                 className={
-                                                    (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') +
-                                                    (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '')
+                                                    (col.id === 'code' ? 'sticky left-0 z-10' : '') +
+                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10' : '') +
+                                                    (col.id === 'actions' ? 'sticky right-0 z-10' : '')
                                                 }
                                             >
                                                 {col.id === 'actions' ? (
                                                      <div className="flex items-center justify-end">
                                                         <Button variant="ghost" size="icon" aria-label="Edit" className="text-slate-500 hover:text-indigo-600"><Icons.Pencil className="h-4 w-4" /></Button>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            aria-label={org.is_active ? 'Lock' : 'Unlock'} 
+                                                            className={`text-slate-500 ${org.is_active ? 'hover:text-red-600' : 'hover:text-emerald-600'}`}
+                                                            onClick={() => handleToggleStatus(org.id, org.is_active)}
+                                                            disabled={isUpdating === org.id}
+                                                        >
+                                                            {isUpdating === org.id ? 
+                                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> :
+                                                                (org.is_active ? <Icons.Lock className="h-4 w-4" /> : <Icons.Unlock className="h-4 w-4" />)
+                                                            }
+                                                        </Button>
                                                     </div>
                                                 ) : renderCellContent(org, col.id) }
                                             </TableCell>

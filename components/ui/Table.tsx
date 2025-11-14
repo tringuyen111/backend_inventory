@@ -1,11 +1,10 @@
-
 import React from 'react';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(({ className, ...props }, ref) => (
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
-      className={`w-full caption-bottom text-sm ${className || ''}`}
+      className={`min-w-full caption-bottom text-sm table-fixed ${className || ''}`}
       {...props}
     />
   </div>
@@ -25,7 +24,11 @@ TableBody.displayName = "TableBody";
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(({ className, ...props }, ref) => (
   <tr
     ref={ref}
-    className={`border-b transition-colors hover:bg-slate-50 data-[state=selected]:bg-slate-100 even:bg-slate-50/50 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800 ${className || ''}`}
+    className={`group border-b transition-colors data-[state=selected]:bg-slate-100 dark:data-[state=selected]:bg-gray-800
+                [&>td]:bg-white dark:[&>td]:bg-gray-950
+                even:[&>td]:bg-slate-50 dark:even:[&>td]:bg-gray-900
+                hover:[&>td]:bg-slate-100 dark:hover:[&>td]:bg-gray-800
+                ${className || ''}`}
     {...props}
   />
 ));
@@ -43,7 +46,7 @@ TableHead.displayName = "TableHead";
 const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={`px-4 py-3 align-middle [&:has([role=checkbox])]:pr-0 ${className || ''}`}
+    className={`px-4 py-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 ${className || ''}`}
     {...props}
   />
 ));

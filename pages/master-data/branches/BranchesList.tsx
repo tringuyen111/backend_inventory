@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Database } from '../../../types/supabase';
@@ -11,9 +12,7 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '../../../components/ui/DropdownMenu';
 import { Badge } from '../../../components/ui/Badge';
 
-type OrganizationForFilter = Database['public']['Views']['v_organizations']['Row'];
-// FIX: Switched from using the 'v_branches' view to querying the 'branches' table directly,
-// and defined a type that includes the joined data objects, aligning with the 'OrganizationsList' pattern.
+type OrganizationForFilter = Database['public']['Tables']['organizations']['Row'];
 type BranchWithDetails = Database['public']['Tables']['branches']['Row'] & {
   organizations: { name: string | null } | null;
   created_by: { full_name: string | null } | null;
@@ -27,6 +26,7 @@ const BranchesList: React.FC = () => {
     const [organizations, setOrganizations] = useState<OrganizationForFilter[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isUpdating, setIsUpdating] = useState<number | null>(null);
     
     // Filtering and Searching State
     const [searchTerm, setSearchTerm] = useState('');
@@ -60,10 +60,9 @@ const BranchesList: React.FC = () => {
     const canNextPage = pagination.pageIndex < pageCount - 1;
     
     useEffect(() => {
-        // Fetch organizations for the filter dropdown
         const fetchOrganizationsForFilter = async () => {
             const { data, error } = await supabase
-                .from('v_organizations')
+                .from('organizations')
                 .select('id, name')
                 .order('name');
 
@@ -83,9 +82,7 @@ const BranchesList: React.FC = () => {
         try {
             const from = pagination.pageIndex * pagination.pageSize;
             const to = from + pagination.pageSize - 1;
-
-            // FIX: Changed query from 'v_branches' view to 'branches' table and added explicit joins
-            // for related data, following the pattern of OrganizationsList.tsx as hinted by the user.
+            
             let query = supabase
                 .from('branches')
                 .select('*, organizations(name), created_by(full_name), updated_by(full_name), manager_id(full_name)', { count: 'exact' });
@@ -94,7 +91,7 @@ const BranchesList: React.FC = () => {
                 query = query.or(`name.ilike.%${debouncedSearchTerm}%,code.ilike.%${debouncedSearchTerm}%`);
             }
             if (statusFilter !== 'all') {
-                query = query.eq('is_active', statusFilter === 'true');
+                query = query.eq('is_active', statusFilter === 'active');
             }
             if (organizationFilter !== 'all') {
                 query = query.eq('organization_id', organizationFilter);
@@ -119,31 +116,86 @@ const BranchesList: React.FC = () => {
     useEffect(() => {
         fetchBranches();
     }, [fetchBranches]);
+    
+    const handleToggleStatus = async (branchId: number, currentStatus: boolean) => {
+        setIsUpdating(branchId);
+        const { error: updateError } = await supabase
+            .from('branches')
+            .update({ is_active: !currentStatus })
+            .eq('id', branchId);
+
+        if (updateError) {
+            setError(`Failed to update status: ${updateError.message}`);
+        } else {
+            await fetchBranches();
+        }
+        setIsUpdating(null);
+    };
+
+    const handleExport = () => {
+        const headers = columnConfig
+            .filter(col => col.id !== 'actions' && columnVisibility[col.id])
+            .map(col => `"${col.label}"`);
+
+        const rows = branches.map(branch => {
+            return columnConfig
+                .filter(col => col.id !== 'actions' && columnVisibility[col.id])
+                .map(col => {
+                    let value: any;
+                    switch (col.id) {
+                        case 'code': value = branch.code; break;
+                        case 'name': value = branch.name; break;
+                        case 'organization_name': value = branch.organizations?.name; break;
+                        case 'phone': value = branch.phone; break;
+                        case 'is_active': value = branch.is_active ? 'Active' : 'Inactive'; break;
+                        case 'updated_at': value = branch.updated_at ? new Date(branch.updated_at).toLocaleString('en-GB', { hour12: false }).replace(',', '') : ''; break;
+                        case 'updated_by_name': value = branch.updated_by?.full_name; break;
+                        case 'address': value = branch.address; break;
+                        case 'manager_name': value = branch.manager_id?.full_name; break;
+                        case 'created_at': value = new Date(branch.created_at).toLocaleString('en-GB', { hour12: false }).replace(',', ''); break;
+                        case 'created_by_name': value = branch.created_by?.full_name; break;
+                        case 'notes': value = branch.notes; break;
+                        default: value = '';
+                    }
+                    return `"${String(value || '').replace(/"/g, '""')}"`;
+                });
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "branches_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const columnConfig = useMemo(() => [
-        { id: 'code', label: 'Mã chi nhánh' },
-        { id: 'name', label: 'Tên chi nhánh' },
-        { id: 'organization_name', label: 'Tổ chức' },
-        { id: 'phone', label: 'Số điện thoại' },
-        { id: 'is_active', label: 'Trạng thái' },
-        { id: 'updated_at', label: 'Cập nhật lúc' },
-        { id: 'updated_by_name', label: 'Cập nhật bởi' },
-        { id: 'address', label: 'Địa chỉ' },
-        { id: 'manager_name', label: 'Quản lý' },
-        { id: 'created_at', label: 'Ngày tạo' },
-        { id: 'created_by_name', label: 'Người tạo' },
-        { id: 'notes', label: 'Ghi chú' },
-        { id: 'actions', label: 'Thao tác' },
+        { id: 'code', label: 'Branch Code', widthClass: 'w-48' },
+        { id: 'name', label: 'Branch Name', widthClass: 'w-64' },
+        { id: 'organization_name', label: 'Organization', widthClass: 'w-64' },
+        { id: 'phone', label: 'Phone', widthClass: 'w-40' },
+        { id: 'is_active', label: 'Status', widthClass: 'w-32' },
+        { id: 'updated_at', label: 'Updated At', widthClass: 'w-48' },
+        { id: 'updated_by_name', label: 'Updated By', widthClass: 'w-48' },
+        { id: 'address', label: 'Address', widthClass: 'w-80' },
+        { id: 'manager_name', label: 'Manager', widthClass: 'w-48' },
+        { id: 'created_at', label: 'Created At', widthClass: 'w-48' },
+        { id: 'created_by_name', label: 'Created By', widthClass: 'w-48' },
+        { id: 'notes', label: 'Notes', widthClass: 'w-64' },
+        { id: 'actions', label: 'Actions', widthClass: 'w-28' },
     ], []);
     
-    // FIX: Updated to access nested data from the joined objects.
     const renderCellContent = (branch: BranchWithDetails, columnId: string) => {
         switch (columnId) {
             case 'code': return <span className="font-medium">{branch.code}</span>;
             case 'name': return branch.name;
             case 'organization_name': return branch.organizations?.name || 'N/A';
             case 'phone': return branch.phone || 'N/A';
-            case 'is_active': return <Badge variant={branch.is_active ? 'success' : 'secondary'}>{branch.is_active ? 'ACTIVE' : 'INACTIVE'}</Badge>;
+            case 'is_active': return <Badge variant={branch.is_active ? 'success' : 'destructive'}>{branch.is_active ? 'Active' : 'Inactive'}</Badge>;
             case 'updated_at': return branch.updated_at ? new Date(branch.updated_at).toLocaleString('en-GB', { hour12: false }).replace(',', '') : 'N/A';
             case 'updated_by_name': return branch.updated_by?.full_name || 'N/A';
             case 'address': return branch.address || 'N/A';
@@ -161,7 +213,7 @@ const BranchesList: React.FC = () => {
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Input
-                            placeholder="Tìm theo mã hoặc tên chi nhánh..."
+                            placeholder="Search by code or name..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-64"
@@ -171,7 +223,7 @@ const BranchesList: React.FC = () => {
                             onChange={(e) => setOrganizationFilter(e.target.value)}
                             className="w-48"
                         >
-                            <option value="all">Tất cả tổ chức</option>
+                            <option value="all">All Organizations</option>
                             {organizations.map(org => (
                                 <option key={org.id} value={org.id}>{org.name}</option>
                             ))}
@@ -181,13 +233,13 @@ const BranchesList: React.FC = () => {
                             onChange={(e) => setStatusFilter(e.target.value)}
                              className="w-40"
                         >
-                            <option value="all">Tất cả trạng thái</option>
-                            <option value="true">Active</option>
-                            <option value="false">Inactive</option>
+                            <option value="all">All Statuses</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
-                         <Button disabled variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 cursor-not-allowed">
+                         <Button onClick={handleExport} disabled={loading || branches.length === 0} variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700">
                             <Icons.FileDown className="mr-2 h-4 w-4" /> Export
                         </Button>
                         <DropdownMenu>
@@ -211,13 +263,13 @@ const BranchesList: React.FC = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <Button>
-                           <Icons.Plus className="mr-2 h-4 w-4" /> Thêm mới
+                           <Icons.Plus className="mr-2 h-4 w-4" /> Create New
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <div className="flex-grow overflow-hidden">
+            <div className="flex-grow overflow-hidden min-w-0">
                  {error && <div className="text-red-500 p-4 bg-red-100 rounded-md m-4">Error: {error}</div>}
                 <div className="h-full overflow-auto">
                     <Table>
@@ -227,8 +279,10 @@ const BranchesList: React.FC = () => {
                                     <TableHead 
                                         key={col.id}
                                         className={
-                                            (col.id === 'code' ? 'sticky left-0 z-20 bg-slate-50 dark:bg-gray-950' : '') +
-                                            (col.id === 'actions' ? 'sticky right-0 z-20 bg-slate-50 dark:bg-gray-950 text-right pr-6' : '')
+                                          (col.id === 'code' ? 'sticky left-0 z-20 ' : '') +
+                                          (col.id === 'name' ? 'sticky left-[12rem] z-20 ' : '') +
+                                          (col.id === 'actions' ? 'sticky right-0 z-20 text-right pr-6 ' : '') +
+                                          (col.widthClass || '')
                                         }
                                     >
                                         {col.label}
@@ -239,11 +293,15 @@ const BranchesList: React.FC = () => {
                         <TableBody>
                             {loading ? (
                                 Array.from({ length: pagination.pageSize }).map((_, i) => (
-                                    <TableRow key={`skeleton-${i}`} className="bg-white dark:bg-gray-950">
+                                    <TableRow key={`skeleton-${i}`}>
                                         {columnConfig.map(col => columnVisibility[col.id] && (
                                             <TableCell 
                                                 key={`cell-skeleton-${col.id}`}
-                                                className={ (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') + (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '')}
+                                                className={
+                                                    (col.id === 'code' ? 'sticky left-0 z-10' : '') +
+                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10' : '') +
+                                                    (col.id === 'actions' ? 'sticky right-0 z-10' : '')
+                                                }
                                             >
                                                 <Skeleton className="h-5 w-full" />
                                             </TableCell>
@@ -266,12 +324,28 @@ const BranchesList: React.FC = () => {
                                         {columnConfig.map(col => columnVisibility[col.id] && (
                                             <TableCell
                                                 key={col.id}
-                                                className={ (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') + (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '') }
+                                                className={
+                                                    (col.id === 'code' ? 'sticky left-0 z-10' : '') +
+                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10' : '') +
+                                                    (col.id === 'actions' ? 'sticky right-0 z-10' : '')
+                                                }
                                             >
                                                 {col.id === 'actions' ? (
                                                      <div className="flex items-center justify-end">
                                                         <Button variant="ghost" size="icon" aria-label="Edit" className="text-slate-500 hover:text-indigo-600"><Icons.Pencil className="h-4 w-4" /></Button>
-                                                        <Button variant="ghost" size="icon" aria-label="Delete" className="text-slate-500 hover:text-red-600"><Icons.Trash2 className="h-4 w-4" /></Button>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            aria-label={branch.is_active ? 'Lock' : 'Unlock'} 
+                                                            className={`text-slate-500 ${branch.is_active ? 'hover:text-red-600' : 'hover:text-emerald-600'}`}
+                                                            onClick={() => handleToggleStatus(branch.id, branch.is_active)}
+                                                            disabled={isUpdating === branch.id}
+                                                        >
+                                                            {isUpdating === branch.id ? 
+                                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> :
+                                                                (branch.is_active ? <Icons.Lock className="h-4 w-4" /> : <Icons.Unlock className="h-4 w-4" />)
+                                                            }
+                                                        </Button>
                                                     </div>
                                                 ) : renderCellContent(branch, col.id) }
                                             </TableCell>
