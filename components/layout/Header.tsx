@@ -23,7 +23,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarCollapsed }) =>
   };
   
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
-  const displayInitial = (profile?.full_name || user?.email || 'U').charAt(0).toUpperCase();
 
 
   return (
@@ -40,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarCollapsed }) =>
             <ol className="inline-flex items-center space-x-1 md:space-x-2 truncate">
                <li>
                   <div className="flex items-center">
-                    <Link to="/dashboard" className="text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                    <Link to="/dashboard" className="text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white">
                       Dashboard
                     </Link>
                   </div>
@@ -58,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarCollapsed }) =>
                        <ChevronRight className="w-4 h-4 text-gray-400 mx-1" />
                       <Link
                         to={to}
-                        className={`text-sm font-medium ${isLast ? 'text-gray-500 dark:text-gray-400 cursor-default' : 'text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white'}`}
+                        className={`text-sm font-medium ${isLast ? 'text-gray-500 dark:text-gray-400 cursor-default' : 'text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white'}`}
                         onClick={(e) => isLast && e.preventDefault()}
                         aria-current={isLast ? 'page' : undefined}
                       >
@@ -73,20 +72,26 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarCollapsed }) =>
         )}
       </div>
 
-      <div className="flex items-center space-x-2 flex-shrink-0">
-        <Button variant="ghost" size="icon">
-          <BellIcon className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1">
+          <button className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500">
+            <BellIcon className="h-6 w-6" />
+            <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-red-500 opacity-75" />
+            <span className="sr-only">Notifications</span>
+          </button>
+          
+          <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500">
+              <img alt="Vietnam Flag" src="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/flags/4x3/vn.svg" className="h-5 w-5 rounded-sm" />
+          </button>
+        </div>
 
+        <div className="h-8 border-l border-gray-200 dark:border-gray-700 mx-2"></div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center space-x-2 rounded-full p-1 bg-blue-100 dark:bg-blue-500/20 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
-                <span className="text-sm font-medium text-gray-800 dark:text-gray-200 pl-2 hidden sm:inline">{displayName}</span>
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-200 dark:bg-blue-800 rounded-full text-sm font-semibold text-blue-700 dark:text-blue-200 flex-shrink-0">
-                    {displayInitial}
-                </div>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 transition-colors">
+                <UserIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:inline">{displayName}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end">
@@ -100,12 +105,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarCollapsed }) =>
             <DropdownMenuItem onClick={() => navigate('/profile')}>
               <UserIcon className="mr-2 h-4 w-4" />
               <span>My Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex items-center">
-                <img alt="Vietnam Flag" src="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/flags/4x3/vn.svg" className="h-4 w-4 mr-2" />
-                <span>Vietnamese</span>
-              </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>

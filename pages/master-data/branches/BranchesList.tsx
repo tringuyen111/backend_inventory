@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Database } from '../../../types/supabase';
@@ -12,20 +11,27 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '../../../components/ui/DropdownMenu';
 import { Badge } from '../../../components/ui/Badge';
 
-// Define the type for an organization with joined user data
-type Organization = Database['public']['Tables']['organizations']['Row'] & {
-    created_by: { full_name: string | null } | null;
-    updated_by: { full_name: string | null } | null;
+type OrganizationForFilter = Database['public']['Views']['v_organizations']['Row'];
+// FIX: Switched from using the 'v_branches' view to querying the 'branches' table directly,
+// and defined a type that includes the joined data objects, aligning with the 'OrganizationsList' pattern.
+type BranchWithDetails = Database['public']['Tables']['branches']['Row'] & {
+  organizations: { name: string | null } | null;
+  created_by: { full_name: string | null } | null;
+  updated_by: { full_name: string | null } | null;
+  manager_id: { full_name: string | null } | null;
 };
 
-const OrganizationsList: React.FC = () => {
-    const [organizations, setOrganizations] = useState<Organization[]>([]);
+
+const BranchesList: React.FC = () => {
+    const [branches, setBranches] = useState<BranchWithDetails[]>([]);
+    const [organizations, setOrganizations] = useState<OrganizationForFilter[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
     // Filtering and Searching State
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [organizationFilter, setOrganizationFilter] = useState('all');
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
     // Pagination State
@@ -36,21 +42,41 @@ const OrganizationsList: React.FC = () => {
     const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
         code: true,
         name: true,
+        organization_name: true,
         phone: true,
-        email: false,
-        status: true,
+        is_active: true,
         updated_at: true,
         updated_by_name: true,
+        address: false,
+        manager_name: false,
         created_at: false,
         created_by_name: false,
+        notes: false,
         actions: true,
     });
 
     const pageCount = useMemo(() => Math.ceil(totalRows / pagination.pageSize), [totalRows, pagination.pageSize]);
     const canPreviousPage = pagination.pageIndex > 0;
     const canNextPage = pagination.pageIndex < pageCount - 1;
+    
+    useEffect(() => {
+        // Fetch organizations for the filter dropdown
+        const fetchOrganizationsForFilter = async () => {
+            const { data, error } = await supabase
+                .from('v_organizations')
+                .select('id, name')
+                .order('name');
 
-    const fetchOrganizations = useCallback(async () => {
+            if (error) {
+                console.error('Error fetching organizations for filter:', error);
+            } else {
+                setOrganizations(data || []);
+            }
+        };
+        fetchOrganizationsForFilter();
+    }, []);
+
+    const fetchBranches = useCallback(async () => {
         setLoading(true);
         setError(null);
 
@@ -58,16 +84,20 @@ const OrganizationsList: React.FC = () => {
             const from = pagination.pageIndex * pagination.pageSize;
             const to = from + pagination.pageSize - 1;
 
+            // FIX: Changed query from 'v_branches' view to 'branches' table and added explicit joins
+            // for related data, following the pattern of OrganizationsList.tsx as hinted by the user.
             let query = supabase
-                .from('organizations')
-                .select('*, created_by(full_name), updated_by(full_name)', { count: 'exact' });
+                .from('branches')
+                .select('*, organizations(name), created_by(full_name), updated_by(full_name), manager_id(full_name)', { count: 'exact' });
 
             if (debouncedSearchTerm) {
                 query = query.or(`name.ilike.%${debouncedSearchTerm}%,code.ilike.%${debouncedSearchTerm}%`);
             }
-
             if (statusFilter !== 'all') {
-                query = query.eq('is_active', statusFilter === 'active');
+                query = query.eq('is_active', statusFilter === 'true');
+            }
+            if (organizationFilter !== 'all') {
+                query = query.eq('organization_id', organizationFilter);
             }
             
             query = query.order('created_at', { ascending: false }).range(from, to);
@@ -76,48 +106,51 @@ const OrganizationsList: React.FC = () => {
 
             if (queryError) throw queryError;
 
-            setOrganizations(data as Organization[] || []);
+            setBranches(data as BranchWithDetails[] || []);
             setTotalRows(count || 0);
         } catch (err: any) {
-            console.error('Error fetching organizations:', err);
-            let errorMessage = 'An unexpected error occurred. Please try again.';
-            if (typeof err?.message === 'string') {
-                errorMessage = err.message;
-            }
-            setError(`Failed to fetch organizations: ${errorMessage}`);
+            console.error('Error fetching branches:', err);
+            setError(`Failed to fetch branches: ${err.message}`);
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearchTerm, statusFilter, pagination]);
+    }, [debouncedSearchTerm, statusFilter, organizationFilter, pagination]);
 
     useEffect(() => {
-        fetchOrganizations();
-    }, [fetchOrganizations]);
+        fetchBranches();
+    }, [fetchBranches]);
 
     const columnConfig = useMemo(() => [
-        { id: 'code', label: 'Code' },
-        { id: 'name', label: 'Name' },
-        { id: 'phone', label: 'Phone' },
-        { id: 'email', label: 'Email' },
-        { id: 'status', label: 'Status' },
-        { id: 'updated_at', label: 'Updated At' },
-        { id: 'updated_by_name', label: 'Updated By' },
-        { id: 'created_at', label: 'Created At' },
-        { id: 'created_by_name', label: 'Created By' },
-        { id: 'actions', label: 'Actions' },
+        { id: 'code', label: 'Mã chi nhánh' },
+        { id: 'name', label: 'Tên chi nhánh' },
+        { id: 'organization_name', label: 'Tổ chức' },
+        { id: 'phone', label: 'Số điện thoại' },
+        { id: 'is_active', label: 'Trạng thái' },
+        { id: 'updated_at', label: 'Cập nhật lúc' },
+        { id: 'updated_by_name', label: 'Cập nhật bởi' },
+        { id: 'address', label: 'Địa chỉ' },
+        { id: 'manager_name', label: 'Quản lý' },
+        { id: 'created_at', label: 'Ngày tạo' },
+        { id: 'created_by_name', label: 'Người tạo' },
+        { id: 'notes', label: 'Ghi chú' },
+        { id: 'actions', label: 'Thao tác' },
     ], []);
     
-    const renderCellContent = (org: Organization, columnId: string) => {
+    // FIX: Updated to access nested data from the joined objects.
+    const renderCellContent = (branch: BranchWithDetails, columnId: string) => {
         switch (columnId) {
-            case 'code': return <span className="font-medium">{org.code}</span>;
-            case 'name': return org.name;
-            case 'phone': return org.phone || 'N/A';
-            case 'email': return org.email || 'N/A';
-            case 'status': return <Badge variant={org.is_active ? 'success' : 'secondary'}>{org.is_active ? 'ACTIVE' : 'INACTIVE'}</Badge>;
-            case 'updated_at': return org.updated_at ? new Date(org.updated_at).toLocaleString('en-GB', { hour12: false }).replace(',', '') : 'N/A';
-            case 'updated_by_name': return org.updated_by?.full_name || 'N/A';
-            case 'created_at': return new Date(org.created_at).toLocaleString('en-GB', { hour12: false }).replace(',', '');
-            case 'created_by_name': return org.created_by?.full_name || 'N/A';
+            case 'code': return <span className="font-medium">{branch.code}</span>;
+            case 'name': return branch.name;
+            case 'organization_name': return branch.organizations?.name || 'N/A';
+            case 'phone': return branch.phone || 'N/A';
+            case 'is_active': return <Badge variant={branch.is_active ? 'success' : 'secondary'}>{branch.is_active ? 'ACTIVE' : 'INACTIVE'}</Badge>;
+            case 'updated_at': return branch.updated_at ? new Date(branch.updated_at).toLocaleString('en-GB', { hour12: false }).replace(',', '') : 'N/A';
+            case 'updated_by_name': return branch.updated_by?.full_name || 'N/A';
+            case 'address': return branch.address || 'N/A';
+            case 'manager_name': return branch.manager_id?.full_name || 'N/A';
+            case 'created_at': return new Date(branch.created_at).toLocaleString('en-GB', { hour12: false }).replace(',', '');
+            case 'created_by_name': return branch.created_by?.full_name || 'N/A';
+            case 'notes': return branch.notes || 'N/A';
             default: return null;
         }
     };
@@ -128,19 +161,29 @@ const OrganizationsList: React.FC = () => {
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Input
-                            placeholder="Search by code or name..."
+                            placeholder="Tìm theo mã hoặc tên chi nhánh..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-64"
                         />
+                         <Select
+                            value={organizationFilter}
+                            onChange={(e) => setOrganizationFilter(e.target.value)}
+                            className="w-48"
+                        >
+                            <option value="all">Tất cả tổ chức</option>
+                            {organizations.map(org => (
+                                <option key={org.id} value={org.id}>{org.name}</option>
+                            ))}
+                        </Select>
                         <Select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                              className="w-40"
                         >
-                            <option value="all">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
@@ -168,7 +211,7 @@ const OrganizationsList: React.FC = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <Button>
-                           <Icons.Plus className="mr-2 h-4 w-4" /> Create new
+                           <Icons.Plus className="mr-2 h-4 w-4" /> Thêm mới
                         </Button>
                     </div>
                 </div>
@@ -200,42 +243,37 @@ const OrganizationsList: React.FC = () => {
                                         {columnConfig.map(col => columnVisibility[col.id] && (
                                             <TableCell 
                                                 key={`cell-skeleton-${col.id}`}
-                                                className={
-                                                    (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') +
-                                                    (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '')
-                                                }
+                                                className={ (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') + (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '')}
                                             >
                                                 <Skeleton className="h-5 w-full" />
                                             </TableCell>
                                         ))}
                                     </TableRow>
                                 ))
-                            ) : organizations.length === 0 ? (
+                            ) : branches.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={Object.values(columnVisibility).filter(Boolean).length}>
                                         <div className="flex flex-col items-center justify-center text-center p-8 space-y-4">
-                                            <Icons.Landmark className="h-16 w-16 text-gray-400" />
-                                            <h3 className="text-xl font-semibold">No Organizations Found</h3>
-                                            <p className="text-gray-500">Try adjusting your filters or create a new organization.</p>
+                                            <Icons.Building className="h-16 w-16 text-gray-400" />
+                                            <h3 className="text-xl font-semibold">No Branches Found</h3>
+                                            <p className="text-gray-500">Try adjusting your filters or create a new branch.</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                organizations.map((org) => (
-                                    <TableRow key={org.id}>
+                                branches.map((branch) => (
+                                    <TableRow key={branch.id}>
                                         {columnConfig.map(col => columnVisibility[col.id] && (
                                             <TableCell
                                                 key={col.id}
-                                                className={
-                                                    (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') +
-                                                    (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '')
-                                                }
+                                                className={ (col.id === 'code' ? 'sticky left-0 bg-inherit z-10' : '') + (col.id === 'actions' ? 'sticky right-0 bg-inherit z-10' : '') }
                                             >
                                                 {col.id === 'actions' ? (
                                                      <div className="flex items-center justify-end">
                                                         <Button variant="ghost" size="icon" aria-label="Edit" className="text-slate-500 hover:text-indigo-600"><Icons.Pencil className="h-4 w-4" /></Button>
+                                                        <Button variant="ghost" size="icon" aria-label="Delete" className="text-slate-500 hover:text-red-600"><Icons.Trash2 className="h-4 w-4" /></Button>
                                                     </div>
-                                                ) : renderCellContent(org, col.id) }
+                                                ) : renderCellContent(branch, col.id) }
                                             </TableCell>
                                         ))}
                                     </TableRow>
@@ -274,4 +312,4 @@ const OrganizationsList: React.FC = () => {
     );
 };
 
-export default OrganizationsList;
+export default BranchesList;

@@ -12,6 +12,7 @@ import * as Icons from '../../components/icons';
 interface Kpi {
     title: string;
     value: string;
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }
 
 interface Warehouse {
@@ -101,12 +102,12 @@ const Dashboard: React.FC = () => {
                 if (kpisRes.data) {
                     const kpiData = kpisRes.data;
                     setKpis([
-                        { title: "Total SKUs", value: kpiData.total_skus.toLocaleString() },
-                        { title: "Total On-Hand", value: kpiData.total_on_hand.toLocaleString() },
-                        { title: "Total Reserved", value: kpiData.total_reserved.toLocaleString() },
-                        { title: "Total Available", value: kpiData.total_available.toLocaleString() },
-                        { title: "Low Stock Items", value: kpiData.low_stock_items.toLocaleString() },
-                        { title: "Expiring Soon", value: kpiData.expiring_soon.toLocaleString() },
+                        { title: "Total SKUs", value: kpiData.total_skus.toLocaleString(), icon: Icons.Package },
+                        { title: "Total On-Hand", value: kpiData.total_on_hand.toLocaleString(), icon: Icons.Boxes },
+                        { title: "Total Reserved", value: kpiData.total_reserved.toLocaleString(), icon: Icons.PackageSearch },
+                        { title: "Total Available", value: kpiData.total_available.toLocaleString(), icon: Icons.PackagePlus },
+                        { title: "Low Stock Items", value: kpiData.low_stock_items.toLocaleString(), icon: Icons.PackageMinus },
+                        { title: "Expiring Soon", value: kpiData.expiring_soon.toLocaleString(), icon: Icons.Truck },
                     ]);
                 }
 
@@ -199,7 +200,15 @@ const Dashboard: React.FC = () => {
                 <>
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                         {kpis.map((kpi) => (
-                            <Card key={kpi.title}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{kpi.title}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpi.value}</div></CardContent></Card>
+                             <Card key={kpi.title}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+                                    <kpi.icon className="h-4 w-4 text-muted-foreground text-indigo-600" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{kpi.value}</div>
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

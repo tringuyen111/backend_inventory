@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(({ className, ...props }, ref) => (
@@ -12,7 +13,7 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(({ className, ...props }, ref) => (
-  <thead ref={ref} className={`[&_tr]:border-b sticky top-0 bg-white dark:bg-gray-950 ${className || ''}`} {...props} />
+  <thead ref={ref} className={`[&_tr]:border-b sticky top-0 bg-slate-50 dark:bg-gray-950 ${className || ''}`} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -24,7 +25,7 @@ TableBody.displayName = "TableBody";
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(({ className, ...props }, ref) => (
   <tr
     ref={ref}
-    className={`border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800 ${className || ''}`}
+    className={`border-b transition-colors hover:bg-slate-50 data-[state=selected]:bg-slate-100 even:bg-slate-50/50 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800 ${className || ''}`}
     {...props}
   />
 ));
@@ -42,7 +43,7 @@ TableHead.displayName = "TableHead";
 const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className || ''}`}
+    className={`px-4 py-3 align-middle [&:has([role=checkbox])]:pr-0 ${className || ''}`}
     {...props}
   />
 ));

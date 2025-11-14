@@ -11,11 +11,11 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <div className="flex h-screen bg-slate-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Sidebar isCollapsed={isSidebarCollapsed} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-gray-900 p-6">
           <Outlet />
         </main>
         <footer className="h-10 border-t flex-shrink-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">

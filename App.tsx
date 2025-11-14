@@ -8,6 +8,7 @@ import Layout from './components/layout/Layout';
 import { PermissionsProvider } from './contexts/PermissionsContext';
 import UserProfile from './pages/profile/UserProfile';
 import OrganizationsList from './pages/master-data/organizations/OrganizationsList';
+import BranchesList from './pages/master-data/branches/BranchesList';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="master-data/organizations" element={<OrganizationsList />} />
+            <Route path="master-data/branches" element={<BranchesList />} />
             {/* Add other protected routes here */}
           </Route>
         </Routes>

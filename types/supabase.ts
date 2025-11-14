@@ -61,6 +61,79 @@ export interface Database {
           }
         ]
       }
+      branches: {
+        Row: {
+          id: number
+          code: string
+          name: string
+          organization_id: number
+          phone: string | null
+          address: string | null
+          manager_id: string | null
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          created_by: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          code: string
+          name: string
+          organization_id: number
+          phone?: string | null
+          address?: string | null
+          manager_id?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          code?: string
+          name?: string
+          organization_id?: number
+          phone?: string | null
+          address?: string | null
+          manager_id?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branches_organization_id_fkey"
+            columns: ["organization_id"]
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branches_manager_id_fkey"
+            columns: ["manager_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branches_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branches_updated_by_fkey"
+            columns: ["updated_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       users: {
         Row: {
           id: string
@@ -145,7 +218,30 @@ export interface Database {
       }
     }
     Views: {
-      [_ in never]: never
+      v_branches: {
+        Row: {
+            id: number;
+            code: string;
+            name: string;
+            organization_id: number;
+            organization_name: string | null;
+            phone: string | null;
+            address: string | null;
+            is_active: boolean;
+            created_at: string;
+            updated_at: string | null;
+            created_by_name: string | null;
+            updated_by_name: string | null;
+            manager_name: string | null;
+            notes: string | null;
+        }
+      }
+      v_organizations: {
+        Row: {
+            id: number;
+            name: string;
+        }
+      }
     }
     Functions: {
       get_user_permissions: {
