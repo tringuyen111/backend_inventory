@@ -1,0 +1,5 @@
+{
+  "name": "Inventory XCloud WMS",
+  "description": "A modern, responsive web application for warehouse management, built with React, TypeScript, and Supabase. It provides features for inventory tracking, user authentication, and dynamic role-based access control.",
+  "requestFramePermissions": []
+}
