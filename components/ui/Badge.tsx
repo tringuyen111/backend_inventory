@@ -1,27 +1,41 @@
-import React from 'react';
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
-type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success';
+import { cn } from "../../lib/utils"
 
-interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: BadgeVariant;
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        outline: "text-foreground",
+        success: "border-transparent bg-emerald-500 text-primary-foreground hover:bg-emerald-500/80"
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+// FIX: The previous implementation with destructuring in the function signature was causing a subtle
+// TypeScript type inference error. Taking the full props object and then destructuring inside the
+// function body is a workaround that helps the type checker correctly infer the `className` and `variant` props.
+function Badge(props: BadgeProps) {
+  const { className, variant, ...rest } = props
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...rest} />
+  )
 }
 
-const variantClasses: Record<BadgeVariant, string> = {
-  default: 'border-transparent bg-indigo-600 text-white hover:bg-indigo-600/80',
-  secondary: 'border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80',
-  destructive: 'border-transparent bg-red-500 text-white hover:bg-red-500/80',
-  outline: 'text-slate-900 dark:text-slate-50 border-slate-200',
-  success: 'border-transparent bg-emerald-100 text-emerald-800',
-};
-
-// FIX: Refactored to use React.forwardRef to align with other UI components and fix a typing issue where className was not being recognized on BadgeProps.
-const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
-  ({ className, variant = 'default', ...props }, ref) => {
-    const classes = `inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:border-gray-800 dark:focus:ring-gray-800 ${variantClasses[variant]} ${className || ''}`;
-    return <div className={classes} ref={ref} {...props} />;
-  }
-);
-Badge.displayName = 'Badge';
-
-
-export { Badge };
+export { Badge, badgeVariants }

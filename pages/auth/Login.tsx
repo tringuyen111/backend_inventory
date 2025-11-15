@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
+import { Checkbox } from '../../components/ui/Checkbox';
 import * as Icons from '../../components/icons';
 
 const Login: React.FC = () => {
@@ -84,9 +85,9 @@ const Login: React.FC = () => {
                         </div>
                     </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}
-                    <div className="flex items-center">
-                        <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                        <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700"> Ghi nhớ đăng nhập </label>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="remember-me" />
+                        <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"> Ghi nhớ đăng nhập </Label>
                     </div>
                     <Button type="submit" className="w-full text-base py-2.5 bg-violet-600 hover:bg-violet-700" disabled={loading}>
                         {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}

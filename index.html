@@ -5,47 +5,31 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Inventory XCloud WMS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.1"
+    "react": "https://aistudiocdn.com/react@18.2.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@18.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@18.2.0/",
+    "react/": "https://aistudiocdn.com/react@18.2.0/",
+    "scheduler": "https://aistudiocdn.com/scheduler@0.23.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@6.23.1",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@2.81.1",
+    "clsx": "https://aistudiocdn.com/clsx@2.1.1",
+    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@2.4.0",
+    "tailwindcss-animate": "https://aistudiocdn.com/tailwindcss-animate@1.0.7",
+    "class-variance-authority": "https://aistudiocdn.com/class-variance-authority@0.7.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@0.417.0",
+    "@radix-ui/react-slot": "https://aistudiocdn.com/@radix-ui/react-slot@1.1.0",
+    "@radix-ui/react-label": "https://aistudiocdn.com/@radix-ui/react-label@2.1.0",
+    "@radix-ui/react-dropdown-menu": "https://aistudiocdn.com/@radix-ui/react-dropdown-menu@2.1.1",
+    "@radix-ui/react-select": "https://aistudiocdn.com/@radix-ui/react-select@2.1.1",
+    "@radix-ui/react-checkbox": "https://aistudiocdn.com/@radix-ui/react-checkbox@1.1.1"
   }
 }
 </script>
-<style>
-  :root {
-    --background: 0 0 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-  body {
-    /* The default background is removed to allow pages like Login to control it. */
-  }
-</style>
 </head>
-<body>
+<body class="bg-background text-foreground">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

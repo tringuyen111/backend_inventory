@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../../components/ui/Badge';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { supabase } from '../../lib/supabaseClient';
-import { Select } from '../../components/ui/Select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
 import { Label } from '../../components/ui/Label';
 import * as Icons from '../../components/icons';
 
@@ -175,22 +175,25 @@ const Dashboard: React.FC = () => {
     return (
         <div className="space-y-6">
             {accessibleWarehouses.length > 0 && (
-                <div className="flex justify-between items-center bg-white dark:bg-gray-950 p-4 rounded-lg shadow -mb-2">
+                <div className="flex justify-between items-center bg-card p-4 rounded-lg shadow-sm -mb-2">
                     <h2 className="text-lg font-semibold">Dashboard Overview</h2>
                     <div className="flex items-center space-x-2">
                         <Label htmlFor="warehouse-select" className="text-sm font-medium">Viewing Warehouse:</Label>
                         <Select
-                            id="warehouse-select"
-                            value={selectedWarehouseId ?? ''}
-                            onChange={(e) => setSelectedWarehouseId(Number(e.target.value))}
-                            className="w-auto min-w-[200px]"
+                            value={selectedWarehouseId?.toString() ?? ''}
+                            onValueChange={(value) => setSelectedWarehouseId(Number(value))}
                             disabled={accessibleWarehouses.length <= 1}
                         >
-                            {accessibleWarehouses.map(wh => (
-                                <option key={wh.id} value={wh.id}>
-                                    {wh.name} ({wh.code})
-                                </option>
-                            ))}
+                            <SelectTrigger id="warehouse-select" className="w-auto min-w-[200px]">
+                                <SelectValue placeholder="Select a warehouse" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {accessibleWarehouses.map(wh => (
+                                    <SelectItem key={wh.id} value={wh.id.toString()}>
+                                        {wh.name} ({wh.code})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
                     </div>
                 </div>
@@ -203,7 +206,7 @@ const Dashboard: React.FC = () => {
                              <Card key={kpi.title}>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-                                    <kpi.icon className="h-4 w-4 text-muted-foreground text-indigo-600" />
+                                    <kpi.icon className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{kpi.value}</div>
@@ -213,7 +216,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card><CardHeader><CardTitle>Warehouse Status</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{warehouseStatus.map((wh) => (<TableRow key={wh.id}><TableCell className="font-medium">{wh.id}</TableCell><TableCell>{wh.name}</TableCell><TableCell><Badge variant={wh.status === 'Active' ? 'success' : 'destructive'}>{wh.status}</Badge></TableCell></TableRow>))}</TableBody></Table></CardContent></Card>
-                        <Card><CardHeader><CardTitle>Low Stock Products</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Product</TableHead><TableHead>On Hand</TableHead><TableHead>Alert</TableHead></TableRow></TableHeader><TableBody>{lowStockProducts.length > 0 ? lowStockProducts.map((p) => (<TableRow key={p.sku}><TableCell><div className="font-medium">{p.product}</div><div className="text-xs text-gray-500">{p.sku}</div></TableCell><TableCell>{p.on_hand} / {p.min_level}</TableCell><TableCell><Badge variant='destructive'>Restock Required</Badge></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center text-gray-500">No low stock items.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+                        <Card><CardHeader><CardTitle>Low Stock Products</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Product</TableHead><TableHead>On Hand</TableHead><TableHead>Alert</TableHead></TableRow></TableHeader><TableBody>{lowStockProducts.length > 0 ? lowStockProducts.map((p) => (<TableRow key={p.sku}><TableCell><div className="font-medium">{p.product}</div><div className="text-xs text-muted-foreground">{p.sku}</div></TableCell><TableCell>{p.on_hand} / {p.min_level}</TableCell><TableCell><Badge variant='destructive'>Restock Required</Badge></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">No low stock items.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
                     </div>
                 </>
             )}

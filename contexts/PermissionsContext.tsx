@@ -20,7 +20,6 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
       if (user) {
         setLoading(true);
         try {
-          // @ts-ignore - The user object will have an id.
           const { data, error } = await supabase.rpc('get_user_permissions', { p_user_id: user.id });
           if (error) {
             console.error('Error fetching permissions:', error);

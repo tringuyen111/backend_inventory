@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Database } from '../../../types/supabase';
 import { Input } from '../../../components/ui/Input';
-import { Select } from '../../../components/ui/Select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/Select';
 import { Button } from '../../../components/ui/Button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/Table';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -208,8 +207,8 @@ const BranchesList: React.FC = () => {
     };
     
     return (
-        <div className="bg-white dark:bg-gray-950 rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
+            <div className="p-4 border-b">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Input
@@ -218,33 +217,35 @@ const BranchesList: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-64"
                         />
-                         <Select
-                            value={organizationFilter}
-                            onChange={(e) => setOrganizationFilter(e.target.value)}
-                            className="w-48"
-                        >
-                            <option value="all">All Organizations</option>
-                            {organizations.map(org => (
-                                <option key={org.id} value={org.id}>{org.name}</option>
-                            ))}
+                         <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
+                            <SelectTrigger className="w-48">
+                                <SelectValue placeholder="Filter by organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Organizations</SelectItem>
+                                {organizations.map(org => (
+                                    <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
-                        <Select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                             className="w-40"
-                        >
-                            <option value="all">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-40">
+                                <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
-                         <Button onClick={handleExport} disabled={loading || branches.length === 0} variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700">
+                         <Button onClick={handleExport} disabled={loading || branches.length === 0} variant="outline">
                             <Icons.FileDown className="mr-2 h-4 w-4" /> Export
                         </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700">
+                                <Button variant="outline">
                                     <Icons.Columns className="mr-2 h-4 w-4" /> Columns
                                 </Button>
                             </DropdownMenuTrigger>
@@ -273,15 +274,15 @@ const BranchesList: React.FC = () => {
                  {error && <div className="text-red-500 p-4 bg-red-100 rounded-md m-4">Error: {error}</div>}
                 <div className="h-full overflow-auto">
                     <Table>
-                        <TableHeader className="z-10">
+                        <TableHeader className="z-10 bg-card">
                             <TableRow>
                                 {columnConfig.map(col => columnVisibility[col.id] && (
                                     <TableHead 
                                         key={col.id}
                                         className={
-                                          (col.id === 'code' ? 'sticky left-0 z-20 ' : '') +
-                                          (col.id === 'name' ? 'sticky left-[12rem] z-20 ' : '') +
-                                          (col.id === 'actions' ? 'sticky right-0 z-20 text-right pr-6 ' : '') +
+                                          (col.id === 'code' ? 'sticky left-0 z-20 bg-card' : '') +
+                                          (col.id === 'name' ? 'sticky left-[12rem] z-20 bg-card' : '') +
+                                          (col.id === 'actions' ? 'sticky right-0 z-20 bg-card text-right pr-6 ' : '') +
                                           (col.widthClass || '')
                                         }
                                     >
@@ -298,9 +299,9 @@ const BranchesList: React.FC = () => {
                                             <TableCell 
                                                 key={`cell-skeleton-${col.id}`}
                                                 className={
-                                                    (col.id === 'code' ? 'sticky left-0 z-10' : '') +
-                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10' : '') +
-                                                    (col.id === 'actions' ? 'sticky right-0 z-10' : '')
+                                                    (col.id === 'code' ? 'sticky left-0 z-10 bg-card group-hover:bg-muted/50' : '') +
+                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10 bg-card group-hover:bg-muted/50' : '') +
+                                                    (col.id === 'actions' ? 'sticky right-0 z-10 bg-card group-hover:bg-muted/50' : '')
                                                 }
                                             >
                                                 <Skeleton className="h-5 w-full" />
@@ -312,22 +313,22 @@ const BranchesList: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={Object.values(columnVisibility).filter(Boolean).length}>
                                         <div className="flex flex-col items-center justify-center text-center p-8 space-y-4">
-                                            <Icons.Building className="h-16 w-16 text-gray-400" />
+                                            <Icons.Building className="h-16 w-16 text-muted-foreground" />
                                             <h3 className="text-xl font-semibold">No Branches Found</h3>
-                                            <p className="text-gray-500">Try adjusting your filters or create a new branch.</p>
+                                            <p className="text-muted-foreground">Try adjusting your filters or create a new branch.</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 branches.map((branch) => (
-                                    <TableRow key={branch.id}>
+                                    <TableRow key={branch.id} className="group">
                                         {columnConfig.map(col => columnVisibility[col.id] && (
                                             <TableCell
                                                 key={col.id}
                                                 className={
-                                                    (col.id === 'code' ? 'sticky left-0 z-10' : '') +
-                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10' : '') +
-                                                    (col.id === 'actions' ? 'sticky right-0 z-10' : '')
+                                                    (col.id === 'code' ? 'sticky left-0 z-10 bg-card group-hover:bg-muted/50' : '') +
+                                                    (col.id === 'name' ? 'sticky left-[12rem] z-10 bg-card group-hover:bg-muted/50' : '') +
+                                                    (col.id === 'actions' ? 'sticky right-0 z-10 bg-card group-hover:bg-muted/50' : '')
                                                 }
                                             >
                                                 {col.id === 'actions' ? (
@@ -357,9 +358,9 @@ const BranchesList: React.FC = () => {
                     </Table>
                 </div>
             </div>
-            <div className="flex-shrink-0 flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Total: <span className="font-semibold text-gray-800 dark:text-gray-200">{totalRows}</span>
+            <div className="flex-shrink-0 flex items-center justify-between p-4 border-t bg-card relative z-30">
+                <div className="text-sm text-muted-foreground">
+                    Total: <span className="font-semibold text-foreground">{totalRows}</span>
                 </div>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -374,11 +375,15 @@ const BranchesList: React.FC = () => {
                         </Button>
                     </div>
                     <Select
-                        value={pagination.pageSize}
-                        onChange={e => setPagination(p => ({ ...p, pageSize: Number(e.target.value), pageIndex: 0 }))}
-                        className="h-9"
+                        value={pagination.pageSize.toString()}
+                        onValueChange={value => setPagination(p => ({ ...p, pageSize: Number(value), pageIndex: 0 }))}
                     >
-                        {[10, 20, 30, 50].map(size => <option key={size} value={size}>{size} / page</option>)}
+                        <SelectTrigger className="h-9 w-[120px]">
+                            <SelectValue placeholder="Page size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[10, 20, 30, 50].map(size => <SelectItem key={size} value={size.toString()}>{size} / page</SelectItem>)}
+                        </SelectContent>
                     </Select>
                 </div>
              </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -77,9 +77,9 @@ const UserProfile: React.FC = () => {
     }
   };
   
-  const dismissToast = () => {
+  const dismissToast = useCallback(() => {
     setToast({ show: false, message: '' });
-  };
+  }, []);
 
   const displayInitial = (profile?.full_name || user?.email || 'U').charAt(0).toUpperCase();
   const loading = authLoading || permissionsLoading;

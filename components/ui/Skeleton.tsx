@@ -1,15 +1,17 @@
-import React from 'react';
+// FIX: Added missing import for React to resolve namespace error.
+import * as React from "react";
+import { cn } from "../../lib/utils"
 
-const Skeleton = ({
+function Skeleton({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-gray-200 dark:bg-gray-700 ${className || ''}`}
+      className={cn("animate-pulse rounded-md bg-muted", className)}
       {...props}
     />
-  );
-};
+  )
+}
 
-export { Skeleton };
+export { Skeleton }
